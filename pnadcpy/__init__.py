@@ -10,6 +10,9 @@ import pandas as pd
 from .read_dicio import get_dicio
 
 
+__version__ = "0.1"
+
+
 def get_ftp(server):
     ftp = ftplib.FTP(server)
     ftp.login()
