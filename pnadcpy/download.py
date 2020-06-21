@@ -2,14 +2,14 @@ import ftplib
 import os
 
 
-def get_ftp(server):
+def _get_ftp(server):
     ftp = ftplib.FTP(server)
     ftp.login()
 
     return ftp
 
 
-def download_doc(ftp, ftp_path, docdir):
+def _doc(ftp, ftp_path, docdir):
     if not os.path.exists(docdir):
         os.makedirs(docdir)
 
@@ -25,7 +25,7 @@ def download_doc(ftp, ftp_path, docdir):
             ftp.retrbinary("RETR " + file, f.write)
 
 
-def download_data(ftp, ftp_path, year, datadir):
+def _data(ftp, ftp_path, year, datadir):
     if not os.path.exists(datadir):
         os.makedirs(datadir)
 
