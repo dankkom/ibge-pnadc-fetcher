@@ -107,7 +107,7 @@ def _parse_sas_file_line(line: str) -> tuple[int, int, str, str]:
         line = line.strip().split(" ")
         start = int(line[0].strip("@"))
         name = line[1]
-        dtype = "category" if "$" in line[2] else "float"
+        dtype = "str" if "$" in line[2] else "float"
         width = int(line[2].strip(".$"))
         return (start, width, name, dtype, desc)
     except Exception as e:
@@ -147,8 +147,9 @@ def read_pnadc(
         widths=dicio["width"],
         names=dicio["name"],
         dtype={
-            name: dtype
-            for name, dtype in zip(dicio["name"], dicio["dtype"])
-        }
+            name: dtype for name, dtype in zip(dicio["name"], dicio["dtype"])
+        },
+        na_values=["", "NA", "."],
+        decimal=".",
     )
     return data
