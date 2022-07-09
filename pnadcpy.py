@@ -10,7 +10,7 @@ from typing import Union
 
 import pandas as pd
 
-__version__ = "0.2"
+__version__ = "0.2.0"
 
 
 logger = logging.getLogger(__name__)
