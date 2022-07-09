@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-import pnadcpy
+import ibge_pnadc_fetcher
 
 
 def get_parser():
@@ -16,9 +16,9 @@ def main():
     args = parser.parse_args()
     year = args.year
     datadir = args.datadir
-    ftp = pnadcpy.get_ftp()
+    ftp = ibge_pnadc_fetcher.get_ftp()
 
-    pnadcpy.download_data(ftp=ftp, year=year, datadir=datadir)
+    ibge_pnadc_fetcher.download_data(ftp=ftp, year=year, datadir=datadir)
 
 
 if __name__ == "__main__":
