@@ -29,7 +29,7 @@ setuptools.setup(
     description="A package to download IBGE's PNADC microdata.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://bitbucket.org/DanKKom/pnadcpy/",
+    url="https://github.com/dankkom/pnadcpy",
     py_modules=["pnadcpy"],
     include_package_data=True,
     packages=setuptools.find_packages(),

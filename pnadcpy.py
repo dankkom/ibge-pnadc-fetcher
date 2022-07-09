@@ -1,21 +1,19 @@
 """PNADC-Downloader: Little script to download PNADC's microdata files."""
 
+import datetime as dt
 import ftplib
 import logging
-import os
-import pathlib
 import re
 import zipfile
-from typing import Union
+from pathlib import Path
 
 import pandas as pd
+from tqdm import tqdm
 
 __version__ = "0.2.0"
 
 
 logger = logging.getLogger(__name__)
-
-Filepath = Union[pathlib.Path, str, os.PathLike]
 
 # FTP paths ===================================================================
 FTP_HOST = "ftp.ibge.gov.br"
@@ -37,28 +35,84 @@ def get_ftp(server: str = FTP_HOST) -> ftplib.FTP:
     return ftp
 
 
+def parse_line(line, pwd):
+    _, _, _, _, size, month, day, year_or_hour, name = line.split()
+    if ":" in year_or_hour:
+        year = dt.date.today().year
+        hour = year_or_hour
+    else:
+        year = year_or_hour
+        hour = "00:00:00"
+    datetime = dt.datetime.strptime(f"{year} {month} {day} {hour}", "%Y %b %d %H:%M")
+    try:
+        size = int(size)
+    except ValueError:
+        size = None
+    period_quarter, period_year = re.search(r"(\d{2})(20\d{2})", name).groups()
+    parsed = {
+        "datetime": datetime,
+        "size": size,
+        "filename": name,
+        "full_path": pwd + "/" + name,
+        "period_quarter": int(period_quarter),
+        "period_year": int(period_year),
+    }
+    return parsed
+
+
+def list_files(ftp: ftplib.FTP) -> list:
+    """List all files in the current directory."""
+    files = []
+    pwd = ftp.pwd()
+    ftp.retrlines("LIST", files.append)
+
+    files = [parse_line(line, pwd) for line in files]
+
+    return files
+
+
 def download_ftp_file(
     ftp: ftplib.FTP,
     ftp_filepath: str,
-    dest_filepath: Filepath,
+    dest_filepath: Path,
+    **kwargs,
 ) -> None:
+    """Download a file from FTP."""
+    if not dest_filepath.parent.exists():
+        dest_filepath.parent.mkdir(parents=True)
+
+    if "file_size" in kwargs:
+        file_size = kwargs["file_size"]
+    else:
+        file_size = ftp.size(ftp_filepath)
+
+    logger.info(f"Downloading {ftp_filepath} --> {dest_filepath}")
+
+    progress = tqdm(
+        desc=ftp_filepath.rsplit("/", 1)[-1],
+        total=file_size,
+        unit="B",
+        unit_scale=True,
+    )
+
     with open(dest_filepath, "wb") as f:
-        ftp.retrbinary("RETR " + ftp_filepath, f.write)
+        def write(data):
+            nonlocal f, progress
+            f.write(data)
+            progress.update(len(data))
+        ftp.retrbinary(f"RETR {ftp_filepath}", write)
+    progress.close()
 
 
-def extract_zip(filepath: Filepath, dest: Filepath) -> None:
+def extract_zip(filepath: Path, dest: Path) -> None:
     with zipfile.ZipFile(filepath) as zf:
         zf.extractall(dest)
 
 
 def download_doc(
     ftp: ftplib.FTP,
-    docdir: Filepath,
+    docdir: Path,
 ) -> None:
-    if isinstance(docdir, str):
-        docdir = pathlib.Path(docdir)
-    if not docdir.exists():
-        docdir.mkdir(parents=True)
 
     # Change current working directory to ftp_path
     ftp.cwd(DOC_FTP_PATH)
@@ -66,7 +120,7 @@ def download_doc(
     files = ftp.nlst(DOC_FTP_PATH)
     for file in files:
         filename = file.split("/")[-1]
-        filepath: pathlib.Path = docdir / filename
+        filepath = docdir / filename
         logger.info(f"DOC: {file} --> {filepath}")
         download_ftp_file(ftp=ftp, ftp_filepath=file, dest_filepath=filepath)
         if filepath.suffix.lower().endswith(".zip"):
@@ -77,25 +131,29 @@ def download_doc(
 def download_data(
     ftp: ftplib.FTP,
     year: int,
-    datadir: Filepath,
+    datadir: Path,
 ) -> None:
-    if isinstance(datadir, str):
-        datadir = pathlib.Path(datadir)
-    if not datadir.exists():
-        datadir.mkdir()
 
     # Change current working directory to ftp_path
-    ftp.cwd(DATA_FTP_PATH)
+    ftp.cwd(f"{DATA_FTP_PATH}/{year}")
 
-    files = ftp.nlst(str(year))
-    q = 1
+    files = list_files(ftp)
+
     for file in files:
-        filepath = datadir / f"{year}Q{q}.zip"
-        logger.info(
-            f"DATA: Year={year} Quarter={q} {file} --> {filepath}"
+        modified = file["datetime"]
+        y = file["period_year"]
+        q = file["period_quarter"]
+        dest_filename = f"pnadc_{y}{q}_{modified:%Y%m%d}.zip"
+        dest_filepath = datadir / f"{y}" / dest_filename
+        if dest_filepath.exists():
+            logger.info(f"{dest_filepath} already exists")
+            continue
+        download_ftp_file(
+            ftp=ftp,
+            ftp_filepath=file["full_path"],
+            dest_filepath=dest_filepath,
+            file_size=file["size"],
         )
-        download_ftp_file(ftp=ftp, ftp_filepath=file, dest_filepath=filepath)
-        q += 1
 
 
 def _parse_sas_file_line(line: str) -> tuple[int, int, str, str]:
@@ -116,7 +174,7 @@ def _parse_sas_file_line(line: str) -> tuple[int, int, str, str]:
         return (None, None, None, None, None)
 
 
-def read_sas_file_dicio(filepath: Filepath) -> dict[str, list]:
+def read_sas_file_dicio(filepath: Path) -> dict[str, list]:
     dicio = {
         "start": [],
         "width": [],
@@ -138,7 +196,7 @@ def read_sas_file_dicio(filepath: Filepath) -> dict[str, list]:
 
 
 def read_pnadc(
-    filepath: Filepath,
+    filepath: Path,
     dicio: pd.DataFrame,
 ) -> pd.DataFrame:
     data = pd.read_fwf(
