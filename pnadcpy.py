@@ -4,7 +4,6 @@ import datetime as dt
 import ftplib
 import logging
 import re
-import zipfile
 from pathlib import Path
 
 import pandas as pd
@@ -35,38 +34,41 @@ def get_ftp(server: str = FTP_HOST) -> ftplib.FTP:
     return ftp
 
 
-def parse_line(line, pwd):
+def parse_data_filename(name):
+    """Parse a filename to extract the year and quarter."""
+    period_quarter, period_year = re.search(r"(\d{2})(20\d{2})", name).groups()
+    return int(period_year), int(period_quarter)
+
+
+def parse_file_line(line, pwd):
     _, _, _, _, size, month, day, year_or_hour, name = line.split()
     if ":" in year_or_hour:
         year = dt.date.today().year
         hour = year_or_hour
     else:
         year = year_or_hour
-        hour = "00:00:00"
-    datetime = dt.datetime.strptime(f"{year} {month} {day} {hour}", "%Y %b %d %H:%M")
+        hour = "00:00"
+    datetime = dt.datetime.strptime(f"{year}{month}{day}{hour}", "%Y%b%d%H:%M")
     try:
         size = int(size)
     except ValueError:
         size = None
-    period_quarter, period_year = re.search(r"(\d{2})(20\d{2})", name).groups()
     parsed = {
         "datetime": datetime,
         "size": size,
         "filename": name,
         "full_path": pwd + "/" + name,
-        "period_quarter": int(period_quarter),
-        "period_year": int(period_year),
     }
     return parsed
 
 
-def list_files(ftp: ftplib.FTP) -> list:
-    """List all files in the current directory."""
+def list_ftp_files(ftp: ftplib.FTP) -> list:
+    """List all data files in the current directory."""
     files = []
     pwd = ftp.pwd()
     ftp.retrlines("LIST", files.append)
 
-    files = [parse_line(line, pwd) for line in files]
+    files = [parse_file_line(line, pwd) for line in files]
 
     return files
 
@@ -104,11 +106,6 @@ def download_ftp_file(
     progress.close()
 
 
-def extract_zip(filepath: Path, dest: Path) -> None:
-    with zipfile.ZipFile(filepath) as zf:
-        zf.extractall(dest)
-
-
 def download_doc(
     ftp: ftplib.FTP,
     docdir: Path,
@@ -117,15 +114,20 @@ def download_doc(
     # Change current working directory to ftp_path
     ftp.cwd(DOC_FTP_PATH)
 
-    files = ftp.nlst(DOC_FTP_PATH)
+    files = list_ftp_files(ftp)
     for file in files:
-        filename = file.split("/")[-1]
-        filepath = docdir / filename
-        logger.info(f"DOC: {file} --> {filepath}")
-        download_ftp_file(ftp=ftp, ftp_filepath=file, dest_filepath=filepath)
-        if filepath.suffix.lower().endswith(".zip"):
-            extract_zip(filepath, docdir)
-            filepath.unlink()
+        modified = file["datetime"]
+        original_name, suffix = file["filename"].split(".")
+        filename = f"{original_name}@{modified:%Y%m%d}.{suffix}"
+        dest_filepath = docdir / filename
+        if dest_filepath.exists():
+            logger.info(f"{dest_filepath} already exists")
+            continue
+        download_ftp_file(
+            ftp=ftp,
+            ftp_filepath=file["full_path"],
+            dest_filepath=dest_filepath,
+        )
 
 
 def download_data(
@@ -137,13 +139,13 @@ def download_data(
     # Change current working directory to ftp_path
     ftp.cwd(f"{DATA_FTP_PATH}/{year}")
 
-    files = list_files(ftp)
+    files = list_ftp_files(ftp)
 
     for file in files:
         modified = file["datetime"]
-        y = file["period_year"]
-        q = file["period_quarter"]
-        dest_filename = f"pnadc_{y}{q}_{modified:%Y%m%d}.zip"
+        y, q = parse_data_filename(file["filename"])
+        _, suffix = file["filename"].split(".")
+        dest_filename = f"pnadc_{y}{q}_{modified:%Y%m%d}.{suffix}"
         dest_filepath = datadir / f"{y}" / dest_filename
         if dest_filepath.exists():
             logger.info(f"{dest_filepath} already exists")
