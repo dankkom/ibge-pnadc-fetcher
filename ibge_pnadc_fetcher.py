@@ -6,7 +6,6 @@ import logging
 import re
 from pathlib import Path
 
-import pandas as pd
 from tqdm import tqdm
 
 __version__ = "0.2.0"
@@ -156,60 +155,3 @@ def download_data(
             dest_filepath=dest_filepath,
             file_size=file["size"],
         )
-
-
-def _parse_sas_file_line(line: str) -> tuple[int, int, str, str]:
-    try:
-        desc = re.findall(r"/\*.*\*/", line)
-        desc = desc[0].strip("*/ ")
-        line = re.sub(r"/\*.*\*/", "", line)
-        line = re.sub(" +", " ", line)
-        line = line.strip().split(" ")
-        start = int(line[0].strip("@"))
-        name = line[1]
-        dtype = "str" if "$" in line[2] else "float"
-        width = int(line[2].strip(".$"))
-        return (start, width, name, dtype, desc)
-    except Exception as e:
-        print(line)
-        print(e)
-        return (None, None, None, None, None)
-
-
-def read_sas_file_dicio(filepath: Path) -> dict[str, list]:
-    dicio = {
-        "start": [],
-        "width": [],
-        "name": [],
-        "dtype": [],
-        "desc": [],
-    }
-    with open(filepath, "r") as f:
-        for line in f:
-            if not line.startswith("@"):
-                continue
-            start, width, name, dtype, desc = _parse_sas_file_line(line)
-            dicio["start"].append(start)
-            dicio["width"].append(width)
-            dicio["name"].append(name)
-            dicio["dtype"].append(dtype)
-            dicio["desc"].append(desc)
-    return dicio
-
-
-def read_pnadc(
-    filepath: Path,
-    dicio: pd.DataFrame,
-) -> pd.DataFrame:
-    data = pd.read_fwf(
-        filepath,
-        compression="zip",
-        widths=dicio["width"],
-        names=dicio["name"],
-        dtype={
-            name: dtype for name, dtype in zip(dicio["name"], dicio["dtype"])
-        },
-        na_values=["", "NA", "."],
-        decimal=".",
-    )
-    return data
