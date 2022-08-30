@@ -1,3 +1,3 @@
-# pnadcpy - a IBGE's PNADC microdata downloader package
+# ibge-pnadc-fetcher - a IBGE's PNADC microdata downloader package
 
-`pnadcpy` is a Python package to download a read IBGE's PNADC microdata.
+A Python package to download IBGE's PNADC microdata.
