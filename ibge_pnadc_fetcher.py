@@ -13,6 +13,8 @@ __version__ = "0.2.1"
 
 logger = logging.getLogger(__name__)
 
+START_YEAR = 2012
+
 # FTP paths ===================================================================
 FTP_HOST = "ftp.ibge.gov.br"
 BASE_FTP_PATH = (
@@ -61,7 +63,7 @@ def parse_file_line(line, pwd):
     return parsed
 
 
-def list_ftp_files(ftp: ftplib.FTP) -> list:
+def list_ftp_files(ftp: ftplib.FTP) -> list[dict]:
     """List all data files in the current directory."""
     files = []
     pwd = ftp.pwd()
@@ -72,6 +74,35 @@ def list_ftp_files(ftp: ftplib.FTP) -> list:
     return files
 
 
+def list_pnadc_data_files(ftp: ftplib.FTP) -> list:
+    data_files = []
+    current_year = dt.date.today().year
+    for year in range(START_YEAR, current_year + 2):
+        try:
+            ftp.cwd(f"{DATA_FTP_PATH}/{year}")
+            files = list_ftp_files(ftp)
+        except ftplib.error_perm:
+            break
+        for file in files:
+            year, quarter = parse_data_filename(file["filename"])
+            file["year"] = year
+            file["quarter"] = quarter
+            _, file["extension"] = file["filename"].rsplit(".", maxsplit=1)
+        data_files.extend(files)
+    return data_files
+
+
+def get_filename(data_file: dict) -> str:
+    stem = "_".join(
+        [
+            "pnadc",
+            f"{data_file['year']}{data_file['quarter']}",
+            f"{data_file['datetime']:%Y%m%d}",
+        ]
+    )
+    return f"{stem}.{data_file['extension']}"
+
+
 def download_ftp_file(
     ftp: ftplib.FTP,
     ftp_filepath: str,
@@ -79,8 +110,7 @@ def download_ftp_file(
     **kwargs,
 ) -> None:
     """Download a file from FTP."""
-    if not dest_filepath.parent.exists():
-        dest_filepath.parent.mkdir(parents=True)
+    dest_filepath.parent.mkdir(parents=True, exist_ok=True)
 
     if "file_size" in kwargs:
         file_size = kwargs["file_size"]
@@ -90,7 +120,7 @@ def download_ftp_file(
     logger.info(f"Downloading {ftp_filepath} --> {dest_filepath}")
 
     progress = tqdm(
-        desc=ftp_filepath.rsplit("/", 1)[-1],
+        desc=dest_filepath.name,
         total=file_size,
         unit="B",
         unit_scale=True,
@@ -129,39 +159,27 @@ def download_doc(
         )
 
 
-def download_data(
-    ftp: ftplib.FTP,
-    year: int,
-    datadir: Path,
-) -> None:
-
-    # Change current working directory to ftp_path
-    ftp.cwd(f"{DATA_FTP_PATH}/{year}")
-
-    files = list_ftp_files(ftp)
-
-    for file in files:
-        modified = file["datetime"]
-        y, q = parse_data_filename(file["filename"])
-        _, suffix = file["filename"].split(".")
-        dest_filename = f"pnadc_{y}{q}_{modified:%Y%m%d}.{suffix}"
-        dest_filepath = datadir / f"{y}" / dest_filename
+def download_data(ftp: ftplib.FTP, datadir: Path) -> None:
+    for data_file in list_pnadc_data_files(ftp):
+        filename = get_filename(data_file)
+        dest_filepath = datadir / str(data_file["year"]) / filename
         if dest_filepath.exists():
             logger.info(f"{dest_filepath} already exists")
-            continue
+            return
         download_ftp_file(
             ftp=ftp,
-            ftp_filepath=file["full_path"],
+            ftp_filepath=data_file["full_path"],
             dest_filepath=dest_filepath,
-            file_size=file["size"],
+            file_size=data_file["size"],
         )
 
 
 def cli():
 
-    import argparse
-
     def get_args():
+
+        import argparse
+
         parser = argparse.ArgumentParser(
             description="Fetch PNADC data/doc from IBGE"
         )
@@ -170,19 +188,13 @@ def cli():
         # Data download
         data_subparser = subparsers.add_parser("data")
         data_subparser.add_argument(
-            "--year",
-            required=True,
-            type=int,
-            help="Year to fetch",
-        )
-        data_subparser.add_argument(
             "--datadir",
             required=True,
             type=Path,
             help="Directory to save data",
         )
         data_subparser.set_defaults(
-            func=lambda ftp, args: download_data(ftp, args.year, args.datadir)
+            func=lambda ftp, args: download_data(ftp, args.datadir)
         )
 
         # Documentation download
