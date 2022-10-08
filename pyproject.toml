@@ -6,7 +6,7 @@ authors = ["Daniel Komesu <danielkomesu@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<4"
 tqdm = "^4.64.0"
 
 [tool.poetry.dev-dependencies]
@@ -14,5 +14,5 @@ autopep8 = "^1.6.0"
 pylint = "^2.14.4"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
