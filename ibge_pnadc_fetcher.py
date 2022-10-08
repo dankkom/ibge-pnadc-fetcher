@@ -5,6 +5,7 @@ import ftplib
 import logging
 import re
 from pathlib import Path
+from typing import Any, Callable
 
 from tqdm import tqdm
 
@@ -138,6 +139,7 @@ def download_ftp_file(
 def download_doc(
     ftp: ftplib.FTP,
     docdir: Path,
+    callback: Callable[[Path], Any] = None,
 ) -> None:
 
     # Change current working directory to ftp_path
@@ -157,9 +159,15 @@ def download_doc(
             ftp_filepath=file["full_path"],
             dest_filepath=dest_filepath,
         )
+        if callable(callback):
+            callback(dest_filepath)
 
 
-def download_data(ftp: ftplib.FTP, datadir: Path) -> None:
+def download_data(
+    ftp: ftplib.FTP,
+    datadir: Path,
+    callback: Callable[[Path], Any] = None,
+):
     for data_file in list_pnadc_data_files(ftp):
         filename = get_filename(data_file)
         dest_filepath = datadir / str(data_file["year"]) / filename
@@ -172,6 +180,8 @@ def download_data(ftp: ftplib.FTP, datadir: Path) -> None:
             dest_filepath=dest_filepath,
             file_size=data_file["size"],
         )
+        if callable(callback):
+            callback(dest_filepath)
 
 
 def cli():
