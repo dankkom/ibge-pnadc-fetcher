@@ -183,30 +183,12 @@ def cli():
         parser = argparse.ArgumentParser(
             description="Fetch PNADC data/doc from IBGE"
         )
-        subparsers = parser.add_subparsers(title="Commands")
 
-        # Data download
-        data_subparser = subparsers.add_parser("data")
-        data_subparser.add_argument(
+        parser.add_argument(
             "--datadir",
             required=True,
             type=Path,
             help="Directory to save data",
-        )
-        data_subparser.set_defaults(
-            func=lambda ftp, args: download_data(ftp, args.datadir)
-        )
-
-        # Documentation download
-        doc_subparser = subparsers.add_parser("doc")
-        doc_subparser.add_argument(
-            "--docdir",
-            required=True,
-            type=Path,
-            help="Directory to save doc",
-        )
-        doc_subparser.set_defaults(
-            func=lambda ftp, args: download_doc(ftp, args.docdir)
         )
 
         args = parser.parse_args()
@@ -215,7 +197,8 @@ def cli():
 
     args = get_args()
     ftp = get_ftp()
-    args.func(ftp, args)
+    download_data(ftp, args.datadir)
+    download_doc(ftp, args.datadir)
 
 
 if __name__ == "__main__":
