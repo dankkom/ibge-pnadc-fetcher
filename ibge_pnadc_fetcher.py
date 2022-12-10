@@ -208,7 +208,7 @@ def cli():
     args = get_args()
     ftp = get_ftp()
     download_data(ftp, args.datadir)
-    download_doc(ftp, args.datadir)
+    download_doc(ftp, args.datadir / "[doc]")
 
 
 if __name__ == "__main__":
