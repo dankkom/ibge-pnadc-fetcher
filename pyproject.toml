@@ -9,7 +9,7 @@ packages = [{include = "ibge_pnadc_fetcher.py"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4"
-tqdm = "^4.64.1"
+tqdm = "*"
 
 
 [build-system]
