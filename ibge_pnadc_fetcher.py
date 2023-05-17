@@ -79,8 +79,9 @@ def list_pnadc_data_files(ftp: ftplib.FTP) -> list:
     data_files = []
     current_year = dt.date.today().year
     for year in range(START_YEAR, current_year + 2):
+        path = f"{DATA_FTP_PATH}/{year}"
         try:
-            ftp.cwd(f"{DATA_FTP_PATH}/{year}")
+            ftp.cwd(path)
             files = list_ftp_files(ftp)
         except ftplib.error_perm:
             break
@@ -128,11 +129,14 @@ def download_ftp_file(
     )
 
     with open(dest_filepath, "wb") as f:
+
         def write(data):
             nonlocal f, progress
             f.write(data)
             progress.update(len(data))
+
         ftp.retrbinary(f"RETR {ftp_filepath}", write)
+
     progress.close()
 
 
@@ -141,7 +145,6 @@ def download_doc(
     docdir: Path,
     callback: Callable[[Path], Any] = None,
 ) -> None:
-
     # Change current working directory to ftp_path
     ftp.cwd(DOC_FTP_PATH)
 
@@ -185,14 +188,10 @@ def download_data(
 
 
 def cli():
-
     def get_args():
-
         import argparse
 
-        parser = argparse.ArgumentParser(
-            description="Fetch PNADC data/doc from IBGE"
-        )
+        parser = argparse.ArgumentParser(description="Fetch PNADC data/doc from IBGE")
 
         parser.add_argument(
             "--datadir",
