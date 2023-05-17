@@ -173,7 +173,7 @@ def download_data(
         dest_filepath = datadir / str(data_file["year"]) / filename
         if dest_filepath.exists():
             logger.info(f"{dest_filepath} already exists")
-            return
+            continue
         download_ftp_file(
             ftp=ftp,
             ftp_filepath=data_file["full_path"],
