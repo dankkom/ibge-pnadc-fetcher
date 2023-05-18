@@ -9,9 +9,6 @@ from typing import Any, Callable
 
 from tqdm import tqdm
 
-__version__ = "0.2.1"
-
-
 logger = logging.getLogger(__name__)
 
 START_YEAR = 2012
