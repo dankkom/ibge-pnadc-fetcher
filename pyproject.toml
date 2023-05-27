@@ -1,17 +1,37 @@
-[tool.poetry]
+[project]
 name = "ibge-pnadc-fetcher"
 version = "0.2.2"
 description = "Script to download PNADC's microdata files"
-authors = ["Daniel Komesu <danielkomesu@gmail.com>"]
-license = "MIT"
 readme = "README.md"
-packages = [{include = "ibge_pnadc_fetcher.py"}]
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+keywords = []
+authors = [
+    {name = "Daniel Komesu", email = "danielkomesu@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: System :: Archiving",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10,<4"
-tqdm = "*"
+dependencies = [
+    "tqdm",
+]
 
+[project.urls]
+Documentation = "https://github.com/viridis-data/ibge-pnadc-fetcher#readme"
+Issues = "https://github.com/viridis-data/ibge-pnadc-fetcher/issues"
+Source = "https://github.com/viridis-data/ibge-pnadc-fetcher"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
