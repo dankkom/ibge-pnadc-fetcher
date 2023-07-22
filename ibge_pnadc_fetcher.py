@@ -188,7 +188,9 @@ def cli():
     def get_args():
         import argparse
 
-        parser = argparse.ArgumentParser(description="Fetch PNADC data/doc from IBGE")
+        parser = argparse.ArgumentParser(
+            description="Fetch PNADC data/doc from IBGE",
+        )
 
         parser.add_argument(
             "--data-dir",
