@@ -191,7 +191,7 @@ def cli():
         parser = argparse.ArgumentParser(description="Fetch PNADC data/doc from IBGE")
 
         parser.add_argument(
-            "--datadir",
+            "--data-dir",
             required=True,
             type=Path,
             help="Directory to save data",
@@ -203,8 +203,8 @@ def cli():
 
     args = get_args()
     ftp = get_ftp()
-    download_data(ftp, args.datadir)
-    download_doc(ftp, args.datadir / "[doc]")
+    download_data(ftp, args.data_dir)
+    download_doc(ftp, args.data_dir / "[doc]")
 
 
 if __name__ == "__main__":
