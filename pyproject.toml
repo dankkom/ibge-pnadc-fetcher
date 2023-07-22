@@ -5,7 +5,15 @@ description = "Script to download PNADC's microdata files"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
-keywords = []
+keywords = [
+    "data",
+    "open data",
+    "data collection",
+    "microdata",
+    "IBGE",
+    "survey",
+    "research",
+]
 authors = [
     {name = "Daniel Komesu", email = "danielkomesu@gmail.com"},
 ]
@@ -28,9 +36,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/viridis-data/ibge-pnadc-fetcher#readme"
-Issues = "https://github.com/viridis-data/ibge-pnadc-fetcher/issues"
-Source = "https://github.com/viridis-data/ibge-pnadc-fetcher"
+Documentation = "https://github.com/viridisdata/ibge-pnadc-fetcher#readme"
+Issues = "https://github.com/viridisdata/ibge-pnadc-fetcher/issues"
+Source = "https://github.com/viridisdata/ibge-pnadc-fetcher"
 
 [build-system]
 requires = ["setuptools"]
