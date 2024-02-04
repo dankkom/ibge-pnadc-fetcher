@@ -196,6 +196,18 @@ def unzip_file(zip_file: Path, dest_dir: Path):
         extracted_file.rename(dest_filepath)
 
 
+def get_latest_files(datadir: Path, extension="zip"):
+    """Get the latest files for each period from a directory."""
+    latest_files = {}
+    files = list(datadir.glob(f"**/pnadc_*.{extension}"))
+    sorted_files = sorted(files, key=lambda f: f.stem.split("_")[-1])
+    for file in sorted_files:
+        _, yearquarter, _ = file.stem.split("_")
+        latest_files[yearquarter] = file
+    latest_files = list(latest_files.values())
+    return latest_files
+
+
 def cli():
     def get_args():
         import argparse
