@@ -185,6 +185,17 @@ def download_data(
             callback(dest_filepath)
 
 
+def unzip_file(zip_file: Path, dest_dir: Path):
+    """Unzip a file to a directory."""
+    _, yearquarter, date = zip_file.stem.split("_")
+    dest_filepath = dest_dir / f"pnadc_{yearquarter}_{date}.txt"
+    with zipfile.ZipFile(zip_file, "r") as z:
+        zfile = z.namelist()[0]
+        z.extract(zfile, dest_dir)
+        extracted_file = dest_dir / zfile
+        extracted_file.rename(dest_filepath)
+
+
 def cli():
     def get_args():
         import argparse
