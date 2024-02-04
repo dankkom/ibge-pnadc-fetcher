@@ -93,6 +93,17 @@ def list_pnadc_data_files(ftp: ftplib.FTP) -> list:
 
 
 def get_filename(data_file: dict) -> str:
+    """Get the filename for a data file.
+
+    The filename is composed by the following parts:
+    - `pnadc`: the dataset's acronym
+    - `YYYYQQ`: the year and quarter of the data
+    - `YYYYMMDD`: the date of the file's last modification
+    - `extension`: the file's extension
+
+    Example: `pnadc_201204_20210101.zip` for a file from the 2nd quarter of 2012
+
+    """
     stem = "_".join(
         [
             "pnadc",
