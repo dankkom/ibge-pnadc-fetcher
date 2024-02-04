@@ -4,6 +4,7 @@ import datetime as dt
 import ftplib
 import logging
 import re
+import zipfile
 from pathlib import Path
 from typing import Any, Callable
 
@@ -95,7 +96,7 @@ def get_filename(data_file: dict) -> str:
     stem = "_".join(
         [
             "pnadc",
-            f"{data_file['year']}{data_file['quarter']}",
+            f"{data_file['year']}{data_file['quarter']:02d}",
             f"{data_file['datetime']:%Y%m%d}",
         ]
     )
