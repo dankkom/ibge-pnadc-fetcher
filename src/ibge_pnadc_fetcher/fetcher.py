@@ -1,14 +1,12 @@
-"""PNADC-Downloader: Little script to download PNADC's microdata files."""
-
 import datetime as dt
 import ftplib
 import logging
 import re
-import zipfile
 from pathlib import Path
-from typing import Any, Callable
 
 from tqdm import tqdm
+
+from .storage import get_data_filepath, get_doc_filepath
 
 logger = logging.getLogger(__name__)
 
@@ -92,28 +90,6 @@ def list_pnadc_data_files(ftp: ftplib.FTP) -> list:
     return data_files
 
 
-def get_filename(data_file: dict) -> str:
-    """Get the filename for a data file.
-
-    The filename is composed by the following parts:
-    - `pnadc`: the dataset's acronym
-    - `YYYYQQ`: the year and quarter of the data
-    - `YYYYMMDD`: the date of the file's last modification
-    - `extension`: the file's extension
-
-    Example: `pnadc_201204_20210101.zip` for a file from the 2nd quarter of 2012
-
-    """
-    stem = "_".join(
-        [
-            "pnadc",
-            f"{data_file['year']}{data_file['quarter']:02d}",
-            f"{data_file['datetime']:%Y%m%d}",
-        ]
-    )
-    return f"{stem}.{data_file['extension']}"
-
-
 def download_ftp_file(
     ftp: ftplib.FTP,
     ftp_filepath: str,
@@ -151,18 +127,17 @@ def download_ftp_file(
 
 def download_doc(
     ftp: ftplib.FTP,
-    docdir: Path,
-    callback: Callable[[Path], Any] = None,
-) -> None:
+    doc_dir: Path,
+) -> list[Path]:
+
+    files = []
+
     # Change current working directory to ftp_path
     ftp.cwd(DOC_FTP_PATH)
 
     files = list_ftp_files(ftp)
     for file in files:
-        modified = file["datetime"]
-        original_name, suffix = file["filename"].split(".")
-        filename = f"{original_name}@{modified:%Y%m%d}.{suffix}"
-        dest_filepath = docdir / filename
+        dest_filepath = get_doc_filepath(file, doc_dir)
         if dest_filepath.exists():
             logger.info(f"{dest_filepath} already exists")
             continue
@@ -171,18 +146,20 @@ def download_doc(
             ftp_filepath=file["full_path"],
             dest_filepath=dest_filepath,
         )
-        if callable(callback):
-            callback(dest_filepath)
+        files.append(dest_filepath)
+
+    return files
 
 
 def download_data(
     ftp: ftplib.FTP,
-    datadir: Path,
-    callback: Callable[[Path], Any] = None,
-):
+    data_dir: Path,
+) -> list[Path]:
+
+    files = []
+
     for data_file in list_pnadc_data_files(ftp):
-        filename = get_filename(data_file)
-        dest_filepath = datadir / str(data_file["year"]) / filename
+        dest_filepath = get_data_filepath(data_file, data_dir)
         if dest_filepath.exists():
             logger.info(f"{dest_filepath} already exists")
             continue
@@ -192,57 +169,6 @@ def download_data(
             dest_filepath=dest_filepath,
             file_size=data_file["size"],
         )
-        if callable(callback):
-            callback(dest_filepath)
+        files.append(dest_filepath)
 
-
-def unzip_file(zip_file: Path, dest_dir: Path):
-    """Unzip a file to a directory."""
-    _, yearquarter, date = zip_file.stem.split("_")
-    dest_filepath = dest_dir / f"pnadc_{yearquarter}_{date}.txt"
-    with zipfile.ZipFile(zip_file, "r") as z:
-        zfile = z.namelist()[0]
-        z.extract(zfile, dest_dir)
-        extracted_file = dest_dir / zfile
-        extracted_file.rename(dest_filepath)
-
-
-def get_latest_files(datadir: Path, extension="zip"):
-    """Get the latest files for each period from a directory."""
-    latest_files = {}
-    files = list(datadir.glob(f"**/pnadc_*.{extension}"))
-    sorted_files = sorted(files, key=lambda f: f.stem.split("_")[-1])
-    for file in sorted_files:
-        _, yearquarter, _ = file.stem.split("_")
-        latest_files[yearquarter] = file
-    latest_files = list(latest_files.values())
-    return latest_files
-
-
-def cli():
-    def get_args():
-        import argparse
-
-        parser = argparse.ArgumentParser(
-            description="Fetch PNADC data/doc from IBGE",
-        )
-
-        parser.add_argument(
-            "--data-dir",
-            required=True,
-            type=Path,
-            help="Directory to save data",
-        )
-
-        args = parser.parse_args()
-
-        return args
-
-    args = get_args()
-    ftp = get_ftp()
-    download_data(ftp, args.data_dir)
-    download_doc(ftp, args.data_dir / "[doc]")
-
-
-if __name__ == "__main__":
-    cli()
+    return files

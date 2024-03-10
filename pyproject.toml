@@ -1,7 +1,7 @@
 [project]
 name = "ibge-pnadc-fetcher"
 version = "0.2.2"
-description = "Script to download PNADC's microdata files"
+description = "Script to download IBGE's PNADC microdata files"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
@@ -15,7 +15,7 @@ keywords = [
     "research",
 ]
 authors = [
-    {name = "Daniel Komesu", email = "danielkomesu@gmail.com"},
+    {name = "Daniel Komesu", email = "daniel@dkko.me"},
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -26,7 +26,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: System :: Archiving",
 ]
@@ -36,9 +38,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/viridisdata/ibge-pnadc-fetcher#readme"
-Issues = "https://github.com/viridisdata/ibge-pnadc-fetcher/issues"
-Source = "https://github.com/viridisdata/ibge-pnadc-fetcher"
+Documentation = "https://github.com/dankkom/ibge-pnadc-fetcher#readme"
+Issues = "https://github.com/dankkom/ibge-pnadc-fetcher/issues"
+Source = "https://github.com/dankkom/ibge-pnadc-fetcher"
 
 [build-system]
 requires = ["setuptools"]
