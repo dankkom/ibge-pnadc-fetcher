@@ -36,9 +36,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/viridisdata/ibge-pnadc-fetcher#readme"
-Issues = "https://github.com/viridisdata/ibge-pnadc-fetcher/issues"
-Source = "https://github.com/viridisdata/ibge-pnadc-fetcher"
+Documentation = "https://github.com/dankkom/ibge-pnadc-fetcher#readme"
+Issues = "https://github.com/dankkom/ibge-pnadc-fetcher/issues"
+Source = "https://github.com/dankkom/ibge-pnadc-fetcher"
 
 [build-system]
 requires = ["setuptools"]
